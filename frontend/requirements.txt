@@ -1,5 +1,6 @@
 streamlit
 requests
-sentence-transformers
+sentence-transformers==2.2.2
 numpy
-torch==2.0.0+cpu -f https://download.pytorch.org/whl/cpu
+torch==2.5.1
+
