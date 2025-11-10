@@ -2,49 +2,53 @@ import json
 import numpy as np
 import faiss
 
-# load products that already have embeddings
+# Load product data (with precomputed embeddings included)
 with open("products.json", "r") as f:
     products = json.load(f)
 
-# convert embeddings to array
-vectors = np.array([item["embedding"] for item in products]).astype("float32")
-
-# load or rebuild FAISS index
-index = faiss.IndexFlatL2(vectors.shape[1])
-index.add(vectors)
+# Load FAISS index (already built offline)
+index = faiss.read_index("vibe_index.faiss")
 
 def cosine_similarity(a, b):
-    a = np.array(a)
-    b = np.array(b)
+    a = np.array(a, dtype=np.float32)
+    b = np.array(b, dtype=np.float32)
     return float(np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b)))
 
 def search(query_embedding, top_k=3, threshold=0.30):
-    scored = []
-    for item in products:
+    """
+    query_embedding: list of floats (precomputed on frontend or external service)
+    """
+
+    q_emb = np.array(query_embedding, dtype="float32").reshape(1, -1)
+
+    # FAISS nearest neighbor search
+    distances, indices = index.search(q_emb, top_k)
+
+    results = []
+    for dist, idx in zip(distances[0], indices[0]):
+        item = products[idx]
         sim = cosine_similarity(query_embedding, item["embedding"])
-        scored.append((sim, item))
+        results.append({
+            "name": item["name"],
+            "description": item["description"],
+            "vibes": item.get("vibes", []),
+            "category": item.get("category", "general"),
+            "similarity": sim
+        })
 
-    scored.sort(key=lambda x: x[0], reverse=True)
-    top = scored[:top_k]
+    # Sort by similarity (FAISS uses distance, we prefer cosine sim)
+    results.sort(key=lambda x: x["similarity"], reverse=True)
 
-    if top[0][0] < threshold:
+    # Fallback: if highest similarity is too low
+    if results[0]["similarity"] < threshold:
         categories = list({p.get("category", "general") for p in products})
         return {
             "result_type": "fallback",
             "suggest_categories": categories
         }
 
-    formatted = []
-    for sim, item in top:
-        formatted.append({
-            "name": item["name"],
-            "description": item["description"],
-            "vibes": item["vibes"],
-            "category": item.get("category", "general"),
-            "similarity": float(sim)
-        })
-
     return {
         "result_type": "match",
-        "results": formatted
+        "results": results
     }
+
