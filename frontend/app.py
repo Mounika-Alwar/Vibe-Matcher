@@ -2,7 +2,7 @@ import streamlit as st
 import requests
 from sentence_transformers import SentenceTransformer
 
-API_URL = "https://vibe-matcher-1.onrender.com/matchr"
+API_URL = "https://vibe-matcher-1.onrender.com/match"
 
 # Load model once
 @st.cache_resource
