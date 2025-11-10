@@ -1,0 +1,5 @@
+streamlit
+requests
+sentence-transformers
+numpy
+torch==2.0.0+cpu -f https://download.pytorch.org/whl/cpu
