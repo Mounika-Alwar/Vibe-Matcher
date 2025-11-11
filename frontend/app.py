@@ -13,6 +13,13 @@ model = load_model()
 
 st.title("Vibe Matcher ✨")
 
+# Add description
+st.markdown("""
+Welcome to **Vibe Matcher**!  
+This app lets you describe your fashion vibe or mood, and it will recommend the top clothing items that match your style.  
+Just type a vibe or style prompt, select how many top results you want, and click *Find Match*.
+""")
+
 query = st.text_input("Describe your vibe:")
 top_k = st.slider("Top K Results", 1, 5, 3)
 
@@ -29,4 +36,5 @@ if st.button("Find Match"):
             st.json(result)
         else:
             st.error(f"Error: {response.text}")
+
 
